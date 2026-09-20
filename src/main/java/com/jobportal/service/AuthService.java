@@ -1,14 +1,15 @@
 package com.jobportal.service;
 
-import com.jobportal.entities.JobSeeker;
-import com.jobportal.repository.JobSeekerRepository;
-import com.jobportal.util.JwtUtil;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import com.jobportal.entities.JobSeeker;
+import com.jobportal.enums.Role;
+import com.jobportal.repository.JobSeekerRepository;
+import com.jobportal.util.JwtUtil;
 
 @Service
 public class AuthService {
@@ -31,8 +32,8 @@ public class AuthService {
 
             // Check if password matches
             if (passwordEncoder.matches(password, jobSeeker.getPassword())) {
-                // Generate JWT without the role, based on email and name
-                return jwtUtil.generateToken(jobSeeker.getEmail(), jobSeeker.getFullName());
+                // Generate JWT with the role, based on email and name
+                return jwtUtil.generateToken(jobSeeker.getEmail(), jobSeeker.getFullName(),Role.JOBSEEKER.name());
             } else {
                 throw new RuntimeException("Invalid password for JobSeeker");
             }

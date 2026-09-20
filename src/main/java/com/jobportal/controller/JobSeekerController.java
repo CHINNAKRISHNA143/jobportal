@@ -1,14 +1,19 @@
 package com.jobportal.controller;
 
-import com.jobportal.entities.JobSeeker;
-import com.jobportal.service.JobseekerService;
-import com.jobportal.util.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.jobportal.entities.JobSeeker;
+import com.jobportal.enums.Role;
+import com.jobportal.service.JobseekerService;
+import com.jobportal.util.JwtUtil;
 
 @RestController
 @RequestMapping("/jobseekers")
@@ -38,7 +43,7 @@ public class JobSeekerController {
             JobSeeker jobSeeker = jobSeekerService.loginJobSeeker(loginRequest.getEmail(), loginRequest.getPassword());
 
             // ✅ Generate JWT Token without role
-            String token = jwtUtil.generateToken(jobSeeker.getEmail(), jobSeeker.getFullName());
+            String token = jwtUtil.generateToken(jobSeeker.getEmail(), jobSeeker.getFullName(),Role.JOBSEEKER.name());
 
             // ✅ Prepare Response
             Map<String, String> response = new HashMap<>();

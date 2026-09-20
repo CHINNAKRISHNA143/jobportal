@@ -1,14 +1,19 @@
 package com.jobportal.controller;
 
-import com.jobportal.entities.Recruiter;
-import com.jobportal.service.RecruiterService;
-import com.jobportal.util.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.jobportal.entities.Recruiter;
+import com.jobportal.enums.Role;
+import com.jobportal.service.RecruiterService;
+import com.jobportal.util.JwtUtil;
 
 @RestController
 @RequestMapping("/recruiters")
@@ -31,14 +36,14 @@ public class RecruiterController {
         }
     }
 
-    // ✅ Login Recruiter API (Now Returning JWT Token without role)
+    // ✅ Login Recruiter API (Now Returning JWT Token without role will include the role later)
     @PostMapping("/login")
     public ResponseEntity<?> loginRecruiter(@RequestBody Recruiter loginRequest) {
         try {
             Recruiter recruiter = recruiterService.loginRecruiter(loginRequest.getEmail(), loginRequest.getPassword());
 
-            // ✅ Generate JWT Token without role
-            String token = jwtUtil.generateToken(recruiter.getEmail(), recruiter.getName());
+            // ✅ Generate JWT Token with role is updated
+            String token = jwtUtil.generateToken(recruiter.getEmail(), recruiter.getName(),Role.RECRUITER.name());
 
             // ✅ Prepare Response
             Map<String, String> response = new HashMap<>();
