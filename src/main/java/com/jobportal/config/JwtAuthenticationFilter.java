@@ -1,56 +1,76 @@
 package com.jobportal.config;
 
+import com.jobportal.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.jobportal.util.JwtUtil;
-
 import java.io.IOException;
+import java.util.Collections;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final UserDetailsService userDetailsService;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
+    public JwtAuthenticationFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
-        this.userDetailsService = userDetailsService;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain chain)
             throws ServletException, IOException {
-        
+
         String authHeader = request.getHeader("Authorization");
 
-        // If Authorization header is missing or doesn't start with Bearer, continue the filter chain
+        // No Bearer token
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             chain.doFilter(request, response);
             return;
         }
 
-        // Extract the token
+        // Extract token
         String token = authHeader.substring(7);
-        String email = jwtUtil.extractEmail(token);
 
-        // Validate token and set authentication in SecurityContext
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        try {
+            String email = jwtUtil.extractEmail(token);
+            String role = jwtUtil.extractRole(token);
 
-            if (jwtUtil.validateToken(token, email)) {  // ✅ Fix: Use email instead of userDetails.getUsername()
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            if (email != null
+                    && role != null
+                    && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+                // Validate JWT
+                if (jwtUtil.validateToken(token, email)) {
+
+                    SimpleGrantedAuthority authority =
+                            new SimpleGrantedAuthority(role);
+
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    email,
+                                    null,
+                                    Collections.singletonList(authority)
+                            );
+
+                    SecurityContextHolder.getContext()
+                            .setAuthentication(authToken);
+                }
             }
+
+        } catch (Exception e) {
+            // Invalid/expired JWT
+            SecurityContextHolder.clearContext();
         }
 
         chain.doFilter(request, response);
